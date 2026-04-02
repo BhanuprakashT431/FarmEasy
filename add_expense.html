@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Add Expense{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-header bg-danger text-white">
+    <h5 class="mb-0">Add Expense for {{ crop.name }}</h5>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <input type="text" class="form-control" name="description" required>
+      </div>
+      <div class="mb-3">
+        <label for="amount" class="form-label">Amount</label>
+        <input type="number" class="form-control" name="amount" required>
+      </div>
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-danger">Save Expense</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

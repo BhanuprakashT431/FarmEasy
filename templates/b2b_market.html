@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>B2B Marketplace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: url("{{ url_for('static', filename='i3.jpg') }}") no-repeat center center fixed;
+      background-size: cover;
+      color: #333;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: rgba(47, 133, 90, 0.95);
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    header h1 {
+      font-weight: 700;
+      font-size: 1.8rem;
+    }
+
+    nav a.btn {
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-primary {
+      background-color: #48bb78;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #38a169;
+    }
+
+    .btn-secondary {
+      background-color: #a0aec0;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #718096;
+    }
+
+    main {
+      flex-grow: 1;
+      padding: 30px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .product-card {
+      background: rgba(255, 255, 255, 0.92);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 7px rgb(0 0 0 / 0.1);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .product-card:hover {
+      box-shadow: 0 5px 15px rgb(0 0 0 / 0.2);
+    }
+
+    .product-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      color: #2f855a;
+    }
+
+    .description {
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      color: #4a5568;
+    }
+
+    .price {
+      font-weight: 700;
+      color: #276749;
+      margin-bottom: 5px;
+    }
+
+    .seller {
+      font-size: 0.85rem;
+      color: #718096;
+    }
+
+    .no-products {
+      font-size: 1.2rem;
+      color: #718096;
+      text-align: center;
+      margin-top: 60px;
+    }
+
+    .form-container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 25px 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    }
+
+    footer {
+      background: rgba(47, 133, 90, 0.95);
+      color: white;
+      text-align: center;
+      padding: 15px 20px;
+      font-size: 0.9rem;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>B2B Marketplace</h1>
+    <nav>
+      <a href="{{ url_for('add_product') }}" class="btn btn-primary">Add New Product</a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Dashboard</a>
+    </nav>
+  </header>
+
+  <main>
+    {% if products %}
+      <div class="product-grid">
+        {% for product in products %}
+          <div class="product-card">
+            <h2>{{ product.name }}</h2>
+            <p class="description">{{ product.description }}</p>
+            <p class="price">Price: ₹{{ "%.2f"|format(product.price) }}</p>
+            <p class="seller">Seller: {{ product.seller.email if product.seller else 'Unknown' }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="no-products">No products listed yet.</p>
+    {% endif %}
+  </main>
+
+  <footer>
+    <p>© {{ current_year }} Farm Tracker B2B Marketplace</p>
+  </footer>
+</body>
+</html>

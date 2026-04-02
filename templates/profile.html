@@ -1,0 +1,10 @@
+<form method="POST" enctype="multipart/form-data">
+  <label>Upload Profile Picture</label>
+  <input type="file" name="profile_picture">
+  <button type="submit">Update Picture</button>
+</form>
+{% if user.profile_picture %}
+  <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" width="150" />
+{% endif %}
+
+

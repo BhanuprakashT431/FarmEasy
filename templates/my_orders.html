@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-4">
+  <h2 class="mb-4">My Orders</h2>
+
+  {% if orders %}
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Total Price</th>
+          <th>Delivery Address</th>
+          <th>Expected Delivery</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr>
+            <td>{{ order.product.title }}</td>
+            <td>{{ order.quantity }}</td>
+            <td>₹{{ '%.2f'|format(order.total_price) }}</td>
+            <td>{{ order.delivery_address }}</td>
+            <td>{{ order.expected_delivery.strftime('%Y-%m-%d') if order.expected_delivery else 'TBD' }}</td>
+            <td>
+              <form action="{{ url_for('cancel_order', order_id=order.id) }}" method="post" style="display:inline-block;">
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this order?')">Cancel</button>
+              </form>
+              <a href="#" class="btn btn-outline-secondary btn-sm">Track</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">
+      You haven't placed any orders yet.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

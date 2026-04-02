@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>My Orders</h2>
+<ul>
+  {% for order in orders %}
+    <li>{{ order.product.title }} - Qty: {{ order.quantity }} - Ordered on {{ order.created_at }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}

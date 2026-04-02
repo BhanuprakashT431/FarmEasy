@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Add Crop{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-header bg-success text-white">
+    <h5 class="mb-0">Add New Crop</h5>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <div class="mb-3">
+        <label for="name" class="form-label">Crop Name</label>
+        <input type="text" class="form-control" name="name" required>
+      </div>
+      <div class="mb-3">
+        <label for="sowing_date" class="form-label">Sowing Date</label>
+        <input type="date" class="form-control" name="sowing_date" required>
+      </div>
+      <div class="mb-3">
+        <label for="harvest_date" class="form-label">Harvest Date</label>
+        <input type="date" class="form-control" name="harvest_date" required>
+      </div>
+      <div class="mb-3">
+        <label for="expected_yield" class="form-label">Expected Yield</label>
+        <input type="number" step="0.01" class="form-control" name="expected_yield" required>
+      </div>
+       <div class="mb-3">
+        <label for="expected_yield" class="form-label">Crop Area(in acers)</label>
+        <input type="number" step="0.01" class="form-control" name="croparea" required>
+      </div>
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success">Add Crop</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

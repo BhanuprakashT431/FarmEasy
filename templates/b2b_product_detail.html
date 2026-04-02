@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>{{ product.title }}</h2>
+<p>{{ product.description }}</p>
+<p>Price: ₹{{ product.price }}</p>
+<p>Quantity Available: {{ product.quantity }}</p>
+
+{% if current_user.is_authenticated %}
+<form method="POST" action="{{ url_for('place_b2b_order', product_id=product.id) }}">
+  <input type="number" name="quantity" min="1" max="{{ product.quantity }}" required>
+  <button type="submit">Place Order</button>
+</form>
+{% endif %}
+{% endblock %}

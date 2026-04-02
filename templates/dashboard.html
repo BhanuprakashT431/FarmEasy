@@ -1,0 +1,264 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Farm Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  
+
+  
+  <style>
+    .bg-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      z-index: -2;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+
+    .card {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+    }
+    .card:hover {
+  transform: scale(1.03);
+  transition: transform 0.3s ease;
+}
+
+
+    .dark-mode .card {
+      background-color: #2a2a2a;
+      color: #f0f0f0;
+    }
+
+    .crop-card {
+      margin-bottom: 1rem;
+    }
+
+    .profile-pic {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 8px;
+      border: 2px solid white;
+      vertical-align: middle;
+    }
+
+    .profile-link {
+      display: flex;
+      align-items: center;
+      color: white;
+      text-decoration: none;
+    }
+
+    .profile-link:hover {
+      color: #ddd;
+      text-decoration: underline;
+    }
+
+    .theme-toggle {
+      cursor: pointer;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: none;
+      background-color: white;
+      color: #000;
+      font-size: 0.9rem;
+    }
+
+    .dark-mode .theme-toggle {
+      background-color: #333;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Light and Dark Background Videos -->
+  <video autoplay muted loop id="bg-video-light" class="bg-video">
+    <source src="{{ url_for('static', filename='v1.mp4') }}" type="video/mp4">
+  </video>
+
+  <video autoplay muted loop id="bg-video-dark" class="bg-video d-none">
+    <source src="{{ url_for('static', filename='v1.mp4') }}" type="video/mp4">
+  </video>
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('dashboard') }}">Farm Tracker</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('buyers_page') }}">Buy Farm Products</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('my_orders') }}">My Orders</a>
+          </li>
+          <li class="nav-item">
+            <a class="profile-link nav-link" href="{{ url_for('update_profile') }}">
+              <img 
+                src="{{ url_for('static', filename=user.profile_pic_url or 'default_profile.png') }}" 
+                alt="Profile Picture" 
+                class="profile-pic"
+                src="{{ url_for('static', filename=user.profile_pic_url|default('default_profile.png')) }}"
+
+              />
+              Profile
+            </a>
+          </li>
+          <li class="nav-item">
+            <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <h1>Welcome Farmer</h1>
+    <div class="row mt-4">
+      <div class="col-md-3">
+        <div class="card text-bg-success mb-3">
+          <div class="card-header">Your Crops</div>
+          <div class="card-body">
+            <h2 class="card-title">{{ crops|length }}</h2>
+            <a href="{{ url_for('add_crop') }}" class="btn btn-light btn-sm">Add Crop</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-bg-warning mb-3">
+          <div class="card-header">Total Expenses</div>
+          <div class="card-body">
+            <h2 class="card-title">₹{{ '%.2f' | format(total_expenses) }}</h2>
+            <p class="card-text">Expenses across your crops</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-bg-info mb-3">
+          <div class="card-header">Transactions</div>
+          <div class="card-body">
+            <h2 class="card-title">{{total_transactions }}</h2>
+            <p class="card-text">Total transactions logged</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-bg-secondary mb-3">
+          <div class="card-header">B2B Marketplace Products</div>
+          <div class="card-body">
+            <h2 class="card-title">{{ b2b_products_count }}</h2>
+            <p class="card-text">Products you have listed for sale</p>
+            <a href="{{ url_for('b2b_products') }}" class="btn btn-light btn-sm">Manage Products</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-4">
+  
+     
+<div class="col-md-6 mb-4">
+    <div class="card border-success">
+      <div class="card-header bg-success text-white">
+        <i class="bi bi-seedling me-2"></i> 🌿 Farming Tip of the Day
+      </div>
+      <div class="card-body">
+        <blockquote class="blockquote mb-0">
+          <p>{{ farming_tip }}</p>
+        </blockquote>
+      </div>
+    </div>
+  </div>
+</div>
+{% if weather and not weather.error %}
+  <div class="card text-bg-info mb-3">
+    <div class="card-header">Weather - {{ weather.city }}</div>
+    <div class="card-body">
+      <h5 class="card-title">
+        <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="weather icon">
+        {{ weather.temperature }}°C - {{ weather.description.capitalize() }}
+      </h5>
+    </div>
+  </div>
+{% elif weather.error %}
+  <p class="text-danger">Weather info unavailable: {{ weather.error }}</p>
+{% endif %}
+
+
+    <hr />
+    <h3>Your Crops</h3>
+    <div class="row">
+      {% for crop in crops %}
+      <div class="col-md-4 crop-card">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ crop.name }}</h5>
+            <p class="card-text">
+              <strong>Sowing:</strong> {{ crop.sowing_date or 'N/A' }}<br />
+              <strong>Harvest:</strong> {{ crop.harvest_date or 'N/A' }}<br />
+              <strong>Expected Yield:</strong> {{ crop.expected_yield or 'N/A' }}
+            </p>
+          </div>
+          <div class="card-footer">
+            <a href="{{ url_for('crop_detail', crop_id=crop.id) }}" class="btn btn-sm btn-primary">View</a>
+            <a href="{{ url_for('add_expense', crop_id=crop.id) }}" class="btn btn-sm btn-warning">Add Expense</a>
+            <a href="{{ url_for('add_transaction', crop_id=crop.id) }}" class="btn btn-sm btn-info">Add Transaction</a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 text-center">
+        <p class="text-muted">No crops added yet.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    const bgLight = document.getElementById('bg-video-light');
+    const bgDark = document.getElementById('bg-video-dark');
+
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      bgLight.classList.toggle('d-none', isDark);
+      bgDark.classList.toggle('d-none', !isDark);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        bgLight.classList.add('d-none');
+        bgDark.classList.remove('d-none');
+      } else {
+        bgLight.classList.remove('d-none');
+        bgDark.classList.add('d-none');
+      }
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
