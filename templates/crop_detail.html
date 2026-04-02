@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>{{ crop.name }} - Crop Details</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -81,6 +82,51 @@
       </div>
     </div>
   </div>
+
+  <div class="row">
+    <div class="col-12 mt-2">
+      <div class="card p-3 mb-4 border-success">
+        <h5 class="text-success"><i class="fa-solid fa-list-check"></i> Crop Action Checklist</h5>
+        
+        <form method="POST" action="{{ url_for('add_task', crop_id=crop.id) }}" class="mb-4 d-flex flex-wrap gap-2 align-items-center">
+          <input type="text" name="description" class="form-control flex-grow-1" style="min-width: 250px;" placeholder="What needs to be done? (e.g. Irrigate Field A)" required>
+          <input type="date" name="due_date" class="form-control" style="width: auto;" required>
+          <button type="submit" class="btn btn-success text-nowrap"><i class="fa-solid fa-plus"></i> Add Task</button>
+        </form>
+
+        {% if crop.tasks %}
+          <ul class="list-group row-gap-2">
+            {% for task in crop.tasks|sort(attribute='is_completed') %}
+              <li class="list-group-item d-flex justify-content-between align-items-center rounded border {{ 'bg-light text-muted' if task.is_completed else 'border-success-subtle' }}">
+                <div>
+                  {% if task.is_completed %}
+                    <i class="fa-solid fa-circle-check text-success me-2"></i>
+                  {% else %}
+                    <i class="fa-regular fa-circle text-secondary me-2"></i>
+                  {% endif %}
+                  <strong class="{{ 'text-decoration-line-through' if task.is_completed else '' }}">{{ task.description }}</strong>
+                  <small class="ms-2 badge {{ 'bg-secondary' if task.is_completed else 'bg-warning text-dark' }}"><i class="fa-regular fa-calendar-days"></i> {{ task.due_date }}</small>
+                </div>
+                {% if not task.is_completed %}
+                <form method="POST" action="{{ url_for('complete_task', task_id=task.id) }}" class="m-0 p-0">
+                  <button type="submit" class="btn btn-sm btn-outline-success"><i class="fa-solid fa-check"></i> Mark Done</button>
+                </form>
+                {% else %}
+                  <span class="text-success small fw-bold"><i class="fa-solid fa-check-double"></i> Completed</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="text-center p-4 bg-light rounded text-muted">
+            <i class="fa-solid fa-clipboard-list fs-2 mb-2"></i>
+            <p class="m-0">No scheduled tasks yet. Plan ahead to maximize yield!</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>

@@ -25,12 +25,13 @@ class Crop(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    sowing_date = db.Column(db.String(20))
+    sowing_date = db.Column(db.Date)
     expected_yield = db.Column(db.Float)
-    harvest_date = db.Column(db.String(20))
+    harvest_date = db.Column(db.Date)
 
     expenses = db.relationship('Expense', backref='crop', lazy=True)
     transactions = db.relationship('Transaction', backref='crop', lazy=True)
+    tasks = db.relationship('CropTask', backref='crop', lazy=True, cascade="all, delete-orphan")
 
 
 class Expense(db.Model):
@@ -40,7 +41,17 @@ class Expense(db.Model):
     crop_id = db.Column(db.Integer, db.ForeignKey('crop.id'), nullable=False)
     description = db.Column(db.String(255), nullable=False)
     amount = db.Column(db.Float, nullable=False)
-    date = db.Column(db.String(20), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+
+
+class CropTask(db.Model):
+    __tablename__ = 'crop_task'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    crop_id = db.Column(db.Integer, db.ForeignKey('crop.id'), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    due_date = db.Column(db.Date, nullable=False)
+    is_completed = db.Column(db.Boolean, default=False)
 
 
 class Category(db.Model):
@@ -58,7 +69,7 @@ class Transaction(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Float, nullable=False)
-    date = db.Column(db.String(20), nullable=False)
+    date = db.Column(db.Date, nullable=False)
     notes = db.Column(db.String(200))
     transaction_type = db.Column(db.String(10), nullable=False)  # 'income' or 'expense'
 
@@ -92,6 +103,7 @@ class B2BOrder(db.Model):
     buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('b2b_product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+    total_price = db.Column(db.Float, nullable=False, default=0.0)
     status = db.Column(db.String(50), default='Pending')
     buyer = db.relationship('User', backref='b2b_orders')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

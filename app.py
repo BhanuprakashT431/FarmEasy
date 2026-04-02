@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify
 from datetime import datetime, timedelta
 import random, os
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import func
-from models import db, Order, User, Crop, Expense, Category, Transaction, B2BProduct, B2BOrder
+from models import db, Order, User, Crop, Expense, Category, Transaction, B2BProduct, B2BOrder, CropTask
 import requests
 
 app = Flask(__name__)
@@ -56,7 +56,9 @@ def get_weather(city='Mandya'):
 
 @app.route('/')
 def home():
-    return redirect(url_for('dashboard'))
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return render_template('landing.html')
 
 # ---------- Auth ----------
 @app.route('/register', methods=['GET', 'POST'])
@@ -115,6 +117,22 @@ def dashboard():
         "Check weather forecasts.",
         "Mulch to retain moisture."
     ]
+    
+    # Financial Analytics (Group by Month for simple chart)
+    chart_data = {'labels': [], 'expenses': [], 'income': []}
+    transactions = db.session.query(Transaction).join(Crop).filter(Crop.user_id == current_user.id).order_by(Transaction.date).all()
+    temp_data = {}
+    for t in transactions:
+        month = t.date.strftime("%Y-%m")
+        if month not in temp_data:
+            temp_data[month] = {'expense': 0, 'income': 0}
+        temp_data[month][t.transaction_type] += t.amount
+    
+    for m in sorted(temp_data.keys()):
+        chart_data['labels'].append(m)
+        chart_data['expenses'].append(temp_data[m]['expense'])
+        chart_data['income'].append(temp_data[m]['income'])
+
     return render_template('dashboard.html',
         user=current_user,
         profile_pic=current_user.profile_picture or 'default_profile.png',
@@ -122,7 +140,8 @@ def dashboard():
         total_expenses=total_expenses,
         total_transactions=total_transactions,
         farming_tip=random.choice(tips),
-        weather=get_weather()
+        weather=get_weather(),
+        chart_data=chart_data
     )
 
 # ---------- Crop ----------
@@ -134,8 +153,8 @@ def add_crop():
             crop = Crop(
                 user_id=current_user.id,
                 name=request.form['name'],
-                sowing_date=datetime.strptime(request.form['sowing_date'], '%Y-%m-%d'),
-                harvest_date=datetime.strptime(request.form['harvest_date'], '%Y-%m-%d'),
+                sowing_date=datetime.strptime(request.form['sowing_date'], '%Y-%m-%d').date(),
+                harvest_date=datetime.strptime(request.form['harvest_date'], '%Y-%m-%d').date(),
                 expected_yield=float(request.form['expected_yield']),
             )
             db.session.add(crop)
@@ -163,6 +182,36 @@ def crop_detail(crop_id):
         expenses=expenses
     )
 
+@app.route('/add_task/<int:crop_id>', methods=['POST'])
+@login_required
+def add_task(crop_id):
+    crop = Crop.query.get_or_404(crop_id)
+    if crop.user_id != current_user.id:
+        abort(403)
+    try:
+        task = CropTask(
+            crop_id=crop_id,
+            description=request.form['description'],
+            due_date=datetime.strptime(request.form['due_date'], '%Y-%m-%d').date()
+        )
+        db.session.add(task)
+        db.session.commit()
+        flash("Task added!", "success")
+    except Exception as e:
+        flash("Failed to add task.", "danger")
+    return redirect(url_for('crop_detail', crop_id=crop_id))
+
+@app.route('/complete_task/<int:task_id>', methods=['POST'])
+@login_required
+def complete_task(task_id):
+    task = CropTask.query.get_or_404(task_id)
+    if task.crop.user_id != current_user.id:
+        abort(403)
+    task.is_completed = True
+    db.session.commit()
+    flash("Task completed!", "success")
+    return redirect(url_for('crop_detail', crop_id=task.crop_id))
+
 # ---------- Expense ----------
 @app.route('/add_expense/<int:crop_id>', methods=['GET', 'POST'])
 @login_required
@@ -176,7 +225,7 @@ def add_expense(crop_id):
                 crop_id=crop_id,
                 description=request.form['description'],
                 amount=float(request.form['amount']),
-                date=datetime.strptime(request.form['date'], '%Y-%m-%d')
+                date=datetime.strptime(request.form['date'], '%Y-%m-%d').date()
             )
             db.session.add(expense)
             db.session.commit()
@@ -200,7 +249,7 @@ def add_transaction(crop_id):
                 crop_id=crop_id,
                 transaction_type=request.form['transaction_type'],
                 amount=float(request.form['amount']),
-                date=datetime.strptime(request.form['date'], '%Y-%m-%d'),
+                date=datetime.strptime(request.form['date'], '%Y-%m-%d').date(),
                 notes=request.form['notes'],
                 category_id=int(request.form['category'])
             )
@@ -220,7 +269,7 @@ def update_profile():
         current_user.username = request.form.get('username')
         current_user.email = request.form.get('email')
         current_user.bio = request.form.get('bio')
-        file = request.files.get('profile_picture')
+        file = request.files.get('profile_pic')
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
@@ -364,6 +413,27 @@ def add_b2b_product():
 
     return render_template("add_b2b_product.html")
 
+
+# ---------- AI Chat ----------
+@app.route('/api/chat', methods=['POST'])
+@login_required
+def ai_chat():
+    user_msg = request.json.get('message', '').lower()
+    responses = [
+        "Based on current trends, ensure you irrigate early morning to prevent evaporation.",
+        "Consider rotating your crops next season to maintain soil nitrogen levels.",
+        "Always track your expenses closely using the dashboard to identify waste.",
+        "Market prices for organic produce are rising—consider natural fertilizers."
+    ]
+    if "water" in user_msg or "irrigate" in user_msg:
+        reply = "For optimal growth, water crops at the base early in the morning to reduce fungal diseases."
+    elif "pest" in user_msg or "bug" in user_msg:
+        reply = "Inspect leaves regularly. Neem oil is a great organic pesticide for early infestations."
+    elif "fertilizer" in user_msg or "soil" in user_msg:
+        reply = "Test your soil pH regularly. Adding compost can naturally improve nutrient retention."
+    else:
+        reply = random.choice(responses)
+    return jsonify({"reply": reply})
 
 # ---------- Run ----------
 if __name__ == '__main__':
